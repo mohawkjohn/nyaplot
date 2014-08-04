@@ -3,6 +3,7 @@ module Nyaplot
     include Jsonizable
 
     define_properties(:type, :data)
+    attr_reader :xrange, :yrange
 
     def initialize(df, type, labels)
       init_properties
@@ -17,14 +18,6 @@ module Nyaplot
 
     def configure(&block)
       self.instance_eval(&block) if block_given?
-    end
-
-    def xrange
-      @xrange
-    end
-
-    def yrange
-      @yrange
     end
 
     def df_name
@@ -93,7 +86,7 @@ module Nyaplot
 
     module Scatter
       include Jsonizable
-      define_group_properties(:options, [:title, :x, :y, :tooltip_contents, :r, :shape, :color, :stroke_color, :stroke_width])
+      define_group_properties(:options, [:title, :x, :y, :tooltip_contents, :r, :shape, :color, :stroke_color, :stroke_width, :size])
 
       def process_data(df, labels)
         label_x = labels[0]

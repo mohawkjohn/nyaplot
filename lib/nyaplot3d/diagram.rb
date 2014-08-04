@@ -1,17 +1,20 @@
+require 'securerandom'
+
 module Nyaplot
   class Diagram3D
     include Jsonizable
 
     define_properties(:type, :data)
 
-    def initialize(df, type, data)
+    def initialize(type, data)
+      name = SecureRandom.uuid()
       init_properties
       mod = Kernel.const_get("Nyaplot").const_get("Diagrams3D").const_get(type.to_s.capitalize)
       self.extend(mod)
       set_property(:type, type)
       set_property(:options, {})
-      set_property(:data, df.name)
-      df = self.process_data(data)
+      set_property(:data, name)
+      df = self.process_data(nil, data)
       DataBase.instance.add(df)
     end
 
@@ -32,7 +35,7 @@ module Nyaplot
       def process_data(df=nil, data)
         case data.length
         when 3
-          if df == nil
+          if df.nil?
             df = DataFrame.new({x: data[0].flatten, y: data[1].flatten, z: data[2].flatten})
             x(:x)
             y(:y)
