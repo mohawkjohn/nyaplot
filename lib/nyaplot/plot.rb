@@ -17,15 +17,16 @@ module Nyaplot
       labels = data.map.with_index{|d, i| 'data' + i.to_s}
       raw_data = data.each.with_index.reduce({}){|memo, (d, i)| memo[labels[i]]=d; next memo}
       df = DataFrame.new(raw_data)
-      return add_with_df(df, type, *labels)
+      return add_with_dataframe(df, type, *labels)
     end
 
-    def add_with_df(df, type, *labels)
+    def add_with_dataframe(df, type, *labels)
       diagram = Diagram.new(df, type, labels)
       diagrams = get_property(:diagrams)
       diagrams.push(diagram)
       return diagram
     end
+    alias :add_with_df :add_with_dataframe
 
     def show
       frame = Frame.new
@@ -33,12 +34,11 @@ module Nyaplot
       frame.show
     end
 
-    def df_list
-      arr=[]
+    def dataframe_list
       diagrams = get_property(:diagrams)
-      diagrams.each{|d| arr.push(d.df_name)}
-      return arr
+      diagrams.map { |d| d.df_name }
     end
+    alias :df_list :dataframe_list
 
     def before_to_json
       diagrams = get_property(:diagrams)

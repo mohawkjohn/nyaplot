@@ -3,6 +3,7 @@ module Nyaplot
     include Jsonizable
 
     define_properties(:type, :data)
+    attr_reader :xrange, :yrange
 
     def initialize(df, type, labels)
       init_properties
@@ -19,14 +20,6 @@ module Nyaplot
       self.instance_eval(&block) if block_given?
     end
 
-    def xrange
-      @xrange
-    end
-
-    def yrange
-      @yrange
-    end
-
     def df_name
       get_property(:data)
     end
@@ -38,12 +31,12 @@ module Nyaplot
       define_group_properties(:options, [:value, :x, :y, :width, :color])
 
       def process_data(df, labels)
-        case labels.length
+        case labels.size
         when 1
           label = labels[0]
           value(label)
           @xrange = df[label].to_a.uniq
-          @yrange = [0, df[label].to_a.length]
+          @yrange = [0, df[label].to_a.size]
         when 2
           label_x = labels[0]
           label_y = labels[1]
@@ -67,7 +60,7 @@ module Nyaplot
         label = labels[0]
         value(label)
         @xrange = [(df[label].to_a.min < 0 ? df[label].to_a.min : 0), df[label].to_a.max]
-        @yrange = [0, df[label].to_a.length]
+        @yrange = [0, df[label].to_a.size]
       end
 
       def zoom?
@@ -93,7 +86,7 @@ module Nyaplot
 
     module Scatter
       include Jsonizable
-      define_group_properties(:options, [:title, :x, :y, :tooltip_contents, :r, :shape, :color, :stroke_color, :stroke_width])
+      define_group_properties(:options, [:title, :x, :y, :tooltip_contents, :r, :shape, :color, :stroke_color, :stroke_width, :size])
 
       def process_data(df, labels)
         label_x = labels[0]
