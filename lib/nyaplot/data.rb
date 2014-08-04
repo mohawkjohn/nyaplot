@@ -5,6 +5,14 @@ require 'csv'
 
 module Nyaplot
   class DataFrame
+    DEFAULT_OPTS = {
+      :col_sep => ',',
+      :headers => true,
+      :converters => :numeric
+    }
+
+    attr_reader :rows
+
     def initialize(source, name=SecureRandom.uuid())
       @name = name
       @rows = []
@@ -24,24 +32,40 @@ module Nyaplot
       end
 
       # transform Symbol to String as a key
-      unless @rows.all? {|row| row.keys.all? {|el| el.is_a?(String)}}
+      unless @rows.all? {|row| row.keys.all? {|el| el.is_a?(Symbol)}}
         @rows.map! do |row|
-          row.inject({}) {|hash, (key, val)| hash[key.to_s]=val; hash}
+          row.inject({}) {|hash, (key, val)| hash[key.to_sym]=val; hash}
         end
       end
     end
 
-    def self.from_csv(path, sep=',', header=true)
-      csv = CSV.open(path,"r",{col_sep: sep, :converters => :numeric})
-      head = csv.readline if header
-      head.map{|el| el.is_a?(String) ? el : el.to_s}
-      rows=[]
+    def self.from_csv(*args)
+      path   = args.shift
+
+      opts      = DEFAULT_OPTS
+      if args.size > 0 && args.first.is_a?(Hash)
+        opts    = opts.merge(args.shift)
+      else
+        opts[:col_sep] = args.shift if args.size > 0
+        opts[:headers] = args.shift if args.size > 0
+      end
+
+      csv  = CSV.open(path, "r", opts)
+      yield csv if block_given?
+
+      head = if opts[:headers]
+        csv.headers if opts[:headers]
+      end
+
+      rows = []
       csv.each do |row|
         hash = {}
-        row.each_with_index{|el,i| hash[head[i]] = el}
-        rows.push(hash)
+        row.each_with_index do |el,i|
+          hash[el[0]] = el[1]
+        end
+        rows << hash
       end
-      df = self.new(rows)
+      self.new(rows)
     end
 
     def filter(&block)
@@ -57,11 +81,12 @@ module Nyaplot
     end
 
     def insert_column(name, arr)
+      name = name.is_a?(Symbol) ? name : name.to_sym
       arr.each_with_index{|val, i| @rows[i][name]=val}
     end
 
     def column(name)
-      id = name.is_a?(String) ? name : name.to_s
+      id = name.is_a?(Symbol) ? name : name.to_sym
       column = @rows.map{|row| row[id]}
       return Series.new(name, column)
     end
@@ -128,13 +153,21 @@ module Nyaplot
   end
 
   class Series
+    include Enumerable
+
     def initialize(label, arr)
       @arr = arr
       @label = label
     end
 
+    def each
+      @arr.each do |item|
+        yield item
+      end
+    end
+
     def to_html(threshold=15)
-      html = '<table><tr><th>' + label + '</th></tr>>'
+      html = '<table><tr><th>' + label.to_s + '</th></tr>>'
       @arr.each_with_index do |el,i|
         next if threshold < i && i < @arr.length-1
         content = i == threshold ? '...' : el.to_s
